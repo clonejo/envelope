@@ -248,7 +248,7 @@ class Envelope:
 
     def __init__(self, message=None, from_=None, to=None, subject=None, headers=None, from_addr=None,
                  gpg=None, smime=None,
-                 encrypt=None, sign=None, passphrase=None, attach_key=None, cert=None, subject_encrypted=None,
+                 encrypt=None, sign=None, passphrase=None, attach_key=None, cert=None, subject_encrypted=None, force_decipherers=None,
                  sender=None, cc=None, bcc=None, reply_to=None, mime=None, attachments=None,
                  smtp=None, output=None, send=None):
         """
@@ -306,6 +306,7 @@ class Envelope:
         #   GPG: (True, key contents, fingerprint, None)
         #   SMIME: certificate contents
         self._encrypt = None
+        self._force_decipherers = None
 
         # `_from` and `_sender` properties might be false because of `sender=False` attribute (or "--no-sender" flag)
         # that explicitly states we have no sender
@@ -884,6 +885,10 @@ class Envelope:
         self._start(sign=sign)
         return self
 
+    def force_decipherers(self, force_decipherers_):
+        self._force_decipherers = force_decipherers_
+        return self
+
     def send(self, send=True, sign=None, encrypt=None):
         """
         Send e-mail contents. To check e-mail was successfully sent, cast the returned object to bool.
@@ -1193,6 +1198,8 @@ class Envelope:
         """
         :return: Set of e-mail addresses
         """
+        if self._force_decipherers is not None:
+            return self._force_decipherers
         return set(x.address for x in self._to + self._cc + self._bcc + ([self.__from] if self.__from else []))
 
     def _encrypt_smime_now(self, email, sign, encrypt):
